@@ -18,10 +18,10 @@ or if you are into vgo, just add the `import ` statement and do a `vgo build`
 
 in order of highest priority first:
 
-1. Command line flag
+1. Command line flag // TODO
 2. Environment variable
-3. Entire Contents of Single file
-4. cli flag that points to single file
+3. Entire Contents of Single file // TODO
+4. cli flag that points to single file // TODO
 5. Contents of a json map in a file // TODO
 6. cli flag that points to json file // TODO
 

@@ -1,4 +1,4 @@
-package covargo
+package covargo // import "github.com/amattn/covargo"
 
 var DefaultCollection Collection
 

@@ -12,20 +12,21 @@ func NewCollection() Collection {
 // will panic if ENV_VAR_NAME is empty
 // CliFlag and JSONKey can be empty, and will default to ENV_VAR_NAME
 // typically, CliFlag is shorter and easy to type and JSONKey is empty or a lowercase, snake case variant of ENV_VAR_NAME
-func (col Collection) Add(evn_var_name, shortflag, longflag, json_key string) {
+func (col Collection) Add(key, evn_var_name, shortflag, longflag, json_key string) {
 
 	if len(evn_var_name) == 0 {
 		panic("evn_var_name len is zero, expected non-zero len string")
 	}
 
 	ci := Item{
+		Key:          key,
 		ENV_VAR_NAME: evn_var_name,
 		Shortflag:    shortflag,
 		Longflag:     longflag,
 		Json_key:     json_key,
 	}
 
-	col[evn_var_name] = ci
+	col[key] = ci
 }
 
 func (col Collection) Get(key string) Item {
