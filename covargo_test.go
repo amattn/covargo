@@ -10,7 +10,10 @@ func TestReadmeUsageDefaultExample(t *testing.T) {
 		DROPBOOKSOFT_SECRET_APP_TOKEN = "DROPBOOKSOFT_SECRET_APP_TOKEN"
 	)
 
-	Add(DROPBOOKSOFT_SECRET_APP_TOKEN, "d", "dbs_token", "dbs_secret_app_token")
+	item := Add(DROPBOOKSOFT_SECRET_APP_TOKEN)
+
+	// here we are using the same string for the item key as the env var.
+	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
 	Load(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
@@ -27,7 +30,10 @@ func TestReadmeUsageCustomExample(t *testing.T) {
 
 	col := NewCollection()
 
-	col.Add(DROPBOOKSOFT_SECRET_APP_TOKEN, "d", "dbs_token", "dbs_secret_app_token")
+	item := col.Add(DROPBOOKSOFT_SECRET_APP_TOKEN)
+
+	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
+	item.SetCliValueFlags("d", "dbs_token", "secret token used to access dbs API")
 
 	col.Load(DROPBOOKSOFT_SECRET_APP_TOKEN)
 

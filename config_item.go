@@ -1,6 +1,7 @@
 package covargo
 
 import (
+	"flag"
 	"os"
 	"time"
 
@@ -10,9 +11,9 @@ import (
 type LoadMethod int
 
 const (
-	EnvVar LoadMethod = iota
-	ShortFlag
+	ShortFlag LoadMethod = iota
 	LongFlag
+	EnvVar
 	WholeFileValue
 	JsonFile
 	Error
@@ -22,13 +23,24 @@ const (
 // we use wonky casing to hint what the standard usage is.
 type Item struct {
 	Key          string // required
-	ENV_VAR_NAME string // environment variable name. if "" this variable cannot be loaded from environment variable
 	Shortflag    string // short version of cli flag, such as -v. if "", we don't set a short flag
 	Longflag     string // long version of cli flag, such as -version. if "", we don't set a long flag
-	Json_key     string // lookup key for pulling value out of a json map.  if "", this variable cannot be loaded from a json file
+	ENV_VAR_NAME string // environment variable name. if "" this variable cannot be loaded from environment variable
 
-	FlagUsage    string // help message for cli flag(s)
-	DefaultValue string
+	SingleValueFilePathFlag      string // a cli flag that tells where to load a file and use the entire contents of the file as the config variable.
+	SingleValueFileShortPathFlag string // a cli flag that tells where to load a file and use the entire contents of the file as the config variable.
+	SingleValueFileDefaultPath   string // default value to look for file to read and use entire contents as value of config var
+
+	JSONFilePathFlag      string
+	JSONFileShortPathFlag string
+	JSONFileDefaultPath   string
+	Json_key              string // lookup key for pulling value out of a json map.  if "", this variable cannot be loaded from a json file
+
+	FlagUsage              string // help message for cli flag(s)
+	DefaultValue           string
+	short_string_ptr       *string
+	long_string_ptr        *string
+	single_file_string_ptr *string
 
 	RawValue string // value we load from ENV, cli flag, file, etc.
 
@@ -61,15 +73,52 @@ func (ci *Item) SetDefaultValue(default_value string) {
 	ci.DefaultValue = default_value
 }
 
-func (ci *Item) SetCliFlags(shortflag, longflag, usage string) {
+// for now, we only support strings...
+func (ci *Item) SetCliValueFlags(shortflag, longflag, usage string) {
 	ci.Shortflag = shortflag
 	ci.Longflag = longflag
 	ci.FlagUsage = usage
+
+	if shortflag != "" {
+		ci.short_string_ptr = flag.String(ci.Shortflag, ci.DefaultValue, ci.FlagUsage)
+	}
+	if longflag != "" {
+		ci.long_string_ptr = flag.String(ci.Longflag, ci.DefaultValue, ci.FlagUsage)
+	}
+}
+
+func (ci *Item) SetSingleFileContent(shortflag, longflag, default_path, usage string) {
+	ci.SingleValueFilePathFlag = shortflag
+	ci.SingleValueFileShortPathFlag = longflag
+	ci.SingleValueFileDefaultPath = default_path
+
+	if shortflag != "" {
+		ci.single_file_string_ptr = flag.String(shortflag, default_path, usage)
+	}
+	if longflag != "" {
+		ci.single_file_string_ptr = flag.String(longflag, default_path, usage)
+	}
 }
 
 // load the raw value from cli flag, env var, file, etc.
 // returns true if
 func (ci *Item) LoadValue() error {
+	if len(ci.Shortflag) > 0 || len(ci.Longflag) > 0 {
+		if flag.Parsed() == false {
+			return deeperror.New(1254443215, "flag.Parsed == false.  cannot load value with unparsed flags", nil)
+		}
+
+		if len(ci.Shortflag) > 0 {
+			ci.set_raw_value(*ci.short_string_ptr, ShortFlag)
+			return nil
+		}
+
+		if len(ci.Longflag) > 0 {
+			ci.set_raw_value(*ci.long_string_ptr, LongFlag)
+			return nil
+		}
+	}
+
 	if len(ci.ENV_VAR_NAME) > 0 {
 
 		candidate_value, value_exists := os.LookupEnv(ci.ENV_VAR_NAME)
@@ -80,10 +129,6 @@ func (ci *Item) LoadValue() error {
 			return nil
 		}
 		// if value_exists == false, then fall thru and move along
-	}
-
-	if len(ci.Shortflag) > 0 || len(ci.Longflag) > 0 {
-
 	}
 
 	// if we get here then that means none of the above worked...
