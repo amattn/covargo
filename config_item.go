@@ -210,6 +210,6 @@ func (ci *Item) set_raw_value(raw string, how LoadMethod) {
 	ci.LastLoad = time.Now()
 }
 
-func (ci Item) String() string {
+func (ci Item) StringValue() string {
 	return ci.RawValue
 }

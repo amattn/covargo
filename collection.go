@@ -46,5 +46,5 @@ func (col Collection) Remove(key string) {
 
 // convenience
 func (col Collection) StringValue(key string) string {
-	return col.Get(key).String()
+	return col.Get(key).StringValue()
 }

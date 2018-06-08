@@ -125,7 +125,7 @@ func TestUnparsedFlags(t *testing.T) {
 func check_item(t *testing.T, debug_num int64, item *Item, expected string) {
 	item.LoadValue()
 
-	candidate := item.String()
+	candidate := item.StringValue()
 	if candidate != expected {
 		t.Error(debug_num, "expected", expected, "got", candidate)
 	}
