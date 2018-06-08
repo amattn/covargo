@@ -1,11 +1,14 @@
 package covargo
 
-import "time"
+import (
+	"log"
+	"time"
+)
 
 const (
 	internal_BUILD_TIMESTAMP = 1528420598
-	internal_BUILD_NUMBER    = 10
-	internal_VERSION_STRING  = "0.1.1"
+	internal_BUILD_NUMBER    = 11
+	internal_VERSION_STRING  = "0.1.2"
 )
 
 func BuildDate() time.Time {
@@ -16,4 +19,8 @@ func BuildNumber() int64 {
 }
 func Version() string {
 	return internal_VERSION_STRING
+}
+
+func About() {
+	log.Printf("covargo (v%v, build %v, build date:%v)", Version(), BuildNumber(), BuildDate())
 }
