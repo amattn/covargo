@@ -2,6 +2,7 @@ package covargo
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -11,36 +12,50 @@ import (
 type LoadMethod int
 
 const (
-	ShortFlag LoadMethod = iota
-	LongFlag
+	LongFlag LoadMethod = iota
+	ShortFlag
 	EnvVar
-	WholeFileValue
-	JsonFile
+	FileContentsLongFlag
+	FileContentsShortFlag
+	FileContentsDefaultLocation
+
+	JsonFileLocationLongFlag
+	JsonFileLocationShortFlag
+	JsonFileDefaultLocation
+
 	Error
 	LoadMethodCount
 )
 
 // we use wonky casing to hint what the standard usage is.
 type Item struct {
-	Key          string // required
-	Shortflag    string // short version of cli flag, such as -v. if "", we don't set a short flag
-	Longflag     string // long version of cli flag, such as -version. if "", we don't set a long flag
+	Key string // required
+
+	// method cli flag
+	Longflag                  string // long version of cli flag, such as -version. if "", we don't set a long flag
+	Shortflag                 string // short version of cli flag, such as -v. if "", we don't set a short flag
+	FlagUsage                 string // help message for cli flag(s)
+	cli_flag_short_string_ptr *string
+	cli_flag_long_string_ptr  *string
+
+	// method: environment variable value
 	ENV_VAR_NAME string // environment variable name. if "" this variable cannot be loaded from environment variable
 
-	SingleValueFilePathFlag      string // a cli flag that tells where to load a file and use the entire contents of the file as the config variable.
-	SingleValueFileShortPathFlag string // a cli flag that tells where to load a file and use the entire contents of the file as the config variable.
-	SingleValueFileDefaultPath   string // default value to look for file to read and use entire contents as value of config var
+	// method: read a file, use contents of file as value
+	FileContentsPathLongFlag       string // a cli flag that tells where to load a file and use the entire contents of the file as the config variable.
+	FileContentsPathShortFlag      string // a cli flag that tells where to load a file and use the entire contents of the file as the config variable.
+	FileContentsDefaultPath        string // default value to look for file to read and use entire contents as value of config var
+	FileContentsUsage              string
+	file_contents_short_string_ptr *string
+	file_contents_long_string_ptr  *string
 
-	JSONFilePathFlag      string
-	JSONFileShortPathFlag string
+	// method Json file
+	JSONFilePathLongFlag  string
+	JSONFilePathShortFlag string
 	JSONFileDefaultPath   string
 	Json_key              string // lookup key for pulling value out of a json map.  if "", this variable cannot be loaded from a json file
 
-	FlagUsage              string // help message for cli flag(s)
-	DefaultValue           string
-	short_string_ptr       *string
-	long_string_ptr        *string
-	single_file_string_ptr *string
+	DefaultValue string // none of the methods work? use this default value
 
 	RawValue string // value we load from ENV, cli flag, file, etc.
 
@@ -80,23 +95,23 @@ func (ci *Item) SetCliValueFlags(shortflag, longflag, usage string) {
 	ci.FlagUsage = usage
 
 	if shortflag != "" {
-		ci.short_string_ptr = flag.String(ci.Shortflag, ci.DefaultValue, ci.FlagUsage)
+		ci.cli_flag_short_string_ptr = flag.String(ci.Shortflag, ci.DefaultValue, ci.FlagUsage)
 	}
 	if longflag != "" {
-		ci.long_string_ptr = flag.String(ci.Longflag, ci.DefaultValue, ci.FlagUsage)
+		ci.cli_flag_long_string_ptr = flag.String(ci.Longflag, ci.DefaultValue, ci.FlagUsage)
 	}
 }
 
-func (ci *Item) SetSingleFileContent(shortflag, longflag, default_path, usage string) {
-	ci.SingleValueFilePathFlag = shortflag
-	ci.SingleValueFileShortPathFlag = longflag
-	ci.SingleValueFileDefaultPath = default_path
+func (ci *Item) SetFileContentsFlags(shortflag, longflag, default_path, usage string) {
+	ci.FileContentsPathLongFlag = longflag
+	ci.FileContentsPathShortFlag = shortflag
+	ci.FileContentsDefaultPath = default_path
 
 	if shortflag != "" {
-		ci.single_file_string_ptr = flag.String(shortflag, default_path, usage)
+		ci.file_contents_short_string_ptr = flag.String(shortflag, default_path, usage)
 	}
 	if longflag != "" {
-		ci.single_file_string_ptr = flag.String(longflag, default_path, usage)
+		ci.file_contents_long_string_ptr = flag.String(longflag, default_path, usage)
 	}
 }
 
@@ -108,15 +123,16 @@ func (ci *Item) LoadValue() error {
 			return deeperror.New(1254443215, "flag.Parsed == false.  cannot load value with unparsed flags", nil)
 		}
 
-		if len(ci.Shortflag) > 0 {
-			ci.set_raw_value(*ci.short_string_ptr, ShortFlag)
+		if len(ci.Longflag) > 0 && ci.cli_flag_long_string_ptr != nil {
+			ci.set_raw_value(*ci.cli_flag_long_string_ptr, LongFlag)
 			return nil
 		}
 
-		if len(ci.Longflag) > 0 {
-			ci.set_raw_value(*ci.long_string_ptr, LongFlag)
+		if len(ci.Shortflag) > 0 && ci.cli_flag_short_string_ptr != nil {
+			ci.set_raw_value(*ci.cli_flag_short_string_ptr, ShortFlag)
 			return nil
 		}
+
 	}
 
 	if len(ci.ENV_VAR_NAME) > 0 {
@@ -130,6 +146,49 @@ func (ci *Item) LoadValue() error {
 		}
 		// if value_exists == false, then fall thru and move along
 	}
+
+	if ci.FileContentsPathLongFlag != "" ||
+		ci.FileContentsPathShortFlag != "" ||
+		ci.FileContentsDefaultPath != "" {
+		if flag.Parsed() == false {
+			return deeperror.New(1143790062, "flag.Parsed == false.  cannot load value with unparsed flags", nil)
+		}
+
+		if ci.FileContentsPathLongFlag != "" && ci.file_contents_long_string_ptr != nil {
+			filepath := *ci.file_contents_long_string_ptr
+			raw_bytes, err := ioutil.ReadFile(filepath)
+			if err != nil {
+				// ignore? log?
+			} else {
+				ci.set_raw_value(string(raw_bytes), FileContentsLongFlag)
+				return nil
+			}
+		}
+
+		if ci.FileContentsPathShortFlag != "" && ci.file_contents_short_string_ptr != nil {
+			filepath := *ci.file_contents_short_string_ptr
+			raw_bytes, err := ioutil.ReadFile(filepath)
+			if err != nil {
+				// ignore? log?
+			} else {
+				ci.set_raw_value(string(raw_bytes), FileContentsShortFlag)
+				return nil
+			}
+		}
+
+		if ci.FileContentsDefaultPath != "" {
+			filepath := ci.FileContentsDefaultPath
+			raw_bytes, err := ioutil.ReadFile(filepath)
+			if err != nil {
+				// ignore? log?
+			} else {
+				ci.set_raw_value(string(raw_bytes), FileContentsDefaultLocation)
+				return nil
+			}
+		}
+	}
+
+	// TODO: other methods
 
 	// if we get here then that means none of the above worked...
 

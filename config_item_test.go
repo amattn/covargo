@@ -2,6 +2,7 @@ package covargo
 
 import (
 	"flag"
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -14,8 +15,7 @@ func TestLongFlag(t *testing.T) {
 	key := "long test"
 	expected := "TestLongFlag-1267897285"
 
-	col := NewCollection()
-	item := col.Add(key)
+	item := MakeItem(key)
 
 	item.SetCliValueFlags("", "somecoolflag", "-somecoolflag will do something")
 
@@ -24,8 +24,6 @@ func TestLongFlag(t *testing.T) {
 		expected,
 	})
 
-	item.LoadValue()
-
 	check_item(t, 2299944751, item, expected)
 }
 
@@ -33,8 +31,7 @@ func TestShortFlag(t *testing.T) {
 	key := "short test"
 	expected := "TestShortFlag-3162324001"
 
-	col := NewCollection()
-	item := col.Add(key)
+	item := MakeItem(key)
 
 	item.SetCliValueFlags("z", "", "-z will do something")
 
@@ -42,8 +39,6 @@ func TestShortFlag(t *testing.T) {
 		"-z",
 		expected,
 	})
-
-	item.LoadValue()
 
 	check_item(t, 2600337503, item, expected)
 }
@@ -54,14 +49,60 @@ func TestEnvVar(t *testing.T) {
 
 	os.Setenv(TESTING_ONLY_ENV_VAR, expected)
 
-	col := NewCollection()
-	item := col.Add(TESTING_ONLY_ENV_VAR)
+	item := MakeItem(TESTING_ONLY_ENV_VAR)
 
 	item.SetEnvVar(TESTING_ONLY_ENV_VAR)
 
-	item.LoadValue()
-
 	check_item(t, 2600337501, item, expected)
+}
+
+func TestFileContentsShortFlag(t *testing.T) {
+	key := "TestFileContentsShortFlagKey"
+	expected := "TestFileContentsShortFlag-3520918599"
+	path := "/tmp/covargo4115216334.tmp.txt"
+	ioutil.WriteFile(path, []byte(expected), 0666)
+
+	item := MakeItem(key)
+
+	item.SetFileContentsFlags("fcsf", "", "", "file path to read contents to use as config variable (TestFileContents)")
+
+	flag.CommandLine.Parse([]string{
+		"-fcsf",
+		path,
+	})
+
+	check_item(t, 4115216334, item, expected)
+}
+
+func TestFileContentsLongFlag(t *testing.T) {
+	key := "TestFileContentsLongFlagKey"
+	expected := "TestFileContentsLongFlag-1149492492"
+	path := "/tmp/covargo2205809716.tmp.txt"
+	ioutil.WriteFile(path, []byte(expected), 0666)
+
+	item := MakeItem(key)
+
+	item.SetFileContentsFlags("", "file_contents_long_flag", "", "file path to read contents to use as config variable (TestFileContents)")
+
+	flag.CommandLine.Parse([]string{
+		"-file_contents_long_flag",
+		path,
+	})
+
+	check_item(t, 7263672532, item, expected)
+}
+
+func TestFileContentsDefaultPath(t *testing.T) {
+	key := "TestFileContentsDefaultPath-Key"
+	expected := "TestFileContentsDefaultPath-3376226663"
+	path := "/tmp/covargo2358454801.tmp.txt"
+	ioutil.WriteFile(path, []byte(expected), 0666)
+
+	item := MakeItem(key)
+
+	item.SetFileContentsFlags("", "", path, "file path to read contents to use as config variable (TestFileContents)")
+
+	check_item(t, 4820722189, item, expected)
 }
 
 func TestUnparsedFlags(t *testing.T) {
@@ -82,6 +123,8 @@ func TestUnparsedFlags(t *testing.T) {
 }
 
 func check_item(t *testing.T, debug_num int64, item Item, expected string) {
+	item.LoadValue()
+
 	candidate := item.String()
 	if candidate != expected {
 		t.Error(debug_num, "expected", expected, "got", candidate)
