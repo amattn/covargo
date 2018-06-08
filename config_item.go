@@ -74,8 +74,8 @@ type Item struct {
 // if JSONKey is "", LoadValue() won't check json file.
 // typically, environment variables are all caps and words are separated by underscores (_)
 // typically, CliFlag is shorter and easy to type and JSONKey is empty or a lowercase, snake case variant of ENV_VAR_NAME
-func MakeItem(key string) Item {
-	item := Item{}
+func NewItem(key string) *Item {
+	item := new(Item)
 	item.Key = key
 	return item
 }

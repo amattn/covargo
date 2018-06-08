@@ -10,11 +10,11 @@ func init() {
 // will panic if ENV_VAR_NAME is empty
 // CliFlag and JSONKey can be empty, and will default to ENV_VAR_NAME
 // typically, CliFlag is shorter and easy to type and JSONKey is empty or a lowercase, snake case variant of ENV_VAR_NAME
-func Add(key string) Item {
+func Add(key string) *Item {
 	return DefaultCollection.Add(key)
 }
 
-func Get(key string) Item {
+func Get(key string) *Item {
 	return DefaultCollection.Get(key)
 }
 

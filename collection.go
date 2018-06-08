@@ -1,8 +1,6 @@
 package covargo
 
-import "github.com/amattn/deeperror"
-
-type Collection map[string]Item
+type Collection map[string]*Item
 
 func NewCollection() Collection {
 	return Collection{}
@@ -12,22 +10,29 @@ func NewCollection() Collection {
 // will panic if ENV_VAR_NAME is empty
 // CliFlag and JSONKey can be empty, and will default to ENV_VAR_NAME
 // typically, CliFlag is shorter and easy to type and JSONKey is empty or a lowercase, snake case variant of ENV_VAR_NAME
-func (col Collection) Add(key string) Item {
-	ci := MakeItem(key)
+func (col Collection) Add(key string) *Item {
+	ci := NewItem(key)
 	col[key] = ci
 	return ci
 }
 
-func (col Collection) Get(key string) Item {
+func (col Collection) Get(key string) *Item {
 	return col[key]
 }
 
 func (col Collection) Load(key string) error {
-	return deeperror.NewTODOError(3055333906)
+	return col.Get(key).LoadValue()
 }
 
 func (col Collection) LoadAll() error {
-	return deeperror.NewTODOError(3761192315)
+	for _, item := range col {
+		err := item.LoadValue()
+		if err != nil {
+			// TODO use multierr or similar to coallate all errors and not block
+			return err
+		}
+	}
+	return nil
 }
 
 func (col Collection) Contains(key string) bool {
