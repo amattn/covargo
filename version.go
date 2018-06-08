@@ -3,9 +3,9 @@ package covargo
 import "time"
 
 const (
-	internal_BUILD_TIMESTAMP = 1000000
-	internal_BUILD_NUMBER    = 0
-	internal_VERSION_STRING  = "0.0.1"
+	internal_BUILD_TIMESTAMP = 1528417661
+	internal_BUILD_NUMBER    = 5
+	internal_VERSION_STRING  = "0.1.0"
 )
 
 func BuildDate() time.Time {
