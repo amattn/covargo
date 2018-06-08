@@ -59,8 +59,9 @@ type Item struct {
 
 	RawValue string // value we load from ENV, cli flag, file, etc.
 
+	LastLoad   time.Time  // when did we last attempt to load?
 	LoadMethod LoadMethod // how was the value loaded?
-	LastLoad   time.Time  // when was it loaded?
+	RawSet     time.Time  // when was Raw Value successfully set?
 
 	// TODO
 	//Type reflect.Type // TODO we default to strings for now, but eventually, will have type specific getters for ints, floats, etc.
@@ -118,6 +119,8 @@ func (ci *Item) SetFileContentsFlags(shortflag, longflag, default_path, usage st
 // load the raw value from cli flag, env var, file, etc.
 // returns true if
 func (ci *Item) LoadValue() error {
+	ci.LastLoad = time.Now()
+
 	if len(ci.Shortflag) > 0 || len(ci.Longflag) > 0 {
 		if flag.Parsed() == false {
 			return deeperror.New(1254443215, "flag.Parsed == false.  cannot load value with unparsed flags", nil)
@@ -148,8 +151,7 @@ func (ci *Item) LoadValue() error {
 	}
 
 	if ci.FileContentsPathLongFlag != "" ||
-		ci.FileContentsPathShortFlag != "" ||
-		ci.FileContentsDefaultPath != "" {
+		ci.FileContentsPathShortFlag != "" {
 		if flag.Parsed() == false {
 			return deeperror.New(1143790062, "flag.Parsed == false.  cannot load value with unparsed flags", nil)
 		}
@@ -176,15 +178,16 @@ func (ci *Item) LoadValue() error {
 			}
 		}
 
-		if ci.FileContentsDefaultPath != "" {
-			filepath := ci.FileContentsDefaultPath
-			raw_bytes, err := ioutil.ReadFile(filepath)
-			if err != nil {
-				// ignore? log?
-			} else {
-				ci.set_raw_value(string(raw_bytes), FileContentsDefaultLocation)
-				return nil
-			}
+	}
+
+	if ci.FileContentsDefaultPath != "" {
+		filepath := ci.FileContentsDefaultPath
+		raw_bytes, err := ioutil.ReadFile(filepath)
+		if err != nil {
+			// ignore? log?
+		} else {
+			ci.set_raw_value(string(raw_bytes), FileContentsDefaultLocation)
+			return nil
 		}
 	}
 
@@ -207,7 +210,7 @@ func (ci *Item) LoadValue() error {
 func (ci *Item) set_raw_value(raw string, how LoadMethod) {
 	ci.RawValue = raw
 	ci.LoadMethod = how
-	ci.LastLoad = time.Now()
+	ci.RawSet = time.Now()
 }
 
 func (ci Item) StringValue() string {

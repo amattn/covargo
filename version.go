@@ -6,9 +6,9 @@ import (
 )
 
 const (
-	internal_BUILD_TIMESTAMP = 1528420598
-	internal_BUILD_NUMBER    = 11
-	internal_VERSION_STRING  = "0.1.2"
+	internal_BUILD_TIMESTAMP = 1528420599
+	internal_BUILD_NUMBER    = 12
+	internal_VERSION_STRING  = "0.1.3"
 )
 
 func BuildDate() time.Time {
