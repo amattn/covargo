@@ -18,18 +18,19 @@ or if you are into vgo, just add the `import ` statement and do a `vgo build`
 
 in order of highest priority first:
 
-1. Command line flag // TODO
+1. Command line flag 
 2. Environment variable
-3. Entire Contents of Single file // TODO
-4. cli flag that points to single file // TODO
-5. Contents of a json map in a file // TODO
-6. cli flag that points to json file // TODO
+3. cli flag or defalut filepath that points to single file
+4. cli flag or defalut filepath that points to json file // TODO
 
 
 Basic usage:
 
-- Create a collection or use the default collection
-- 
+- Create a collection or use the default collection.
+- Add congig Items, each identified by a string key.
+- For each item, define how it can be loaded.
+- Load the items.
+- Each item can then be queried for its value.
 
 Here's an example of using the default collection:
 
@@ -37,7 +38,12 @@ Here's an example of using the default collection:
 		DROPBOOKSOFT_SECRET_APP_TOKEN = "DROPBOOKSOFT_SECRET_APP_TOKEN"
 	)
 
-	covargo.Add(DROPBOOKSOFT_SECRET_APP_TOKEN, "d", "dbs_token", "dbs_secret_app_token")
+	item := covargo.Add(DROPBOOKSOFT_SECRET_APP_TOKEN)
+	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
+	item.SetCliValueFlags("d", "dbs_token", "secret token used to access dbs API")
+
+	// here we are using the same string for the item key as the env var.
+	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
 	covargo.Load(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
@@ -54,7 +60,10 @@ Here's an example of using your own collection:
 
 	col := NewCollection()
 
-	col.Add(DROPBOOKSOFT_SECRET_APP_TOKEN, "d", "dbs_token", "dbs_secret_app_token")
+	item := col.Add(DROPBOOKSOFT_SECRET_APP_TOKEN)
+
+	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
+	item.SetCliValueFlags("d", "dbs_token", "secret token used to access dbs API")
 
 	col.Load(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
@@ -63,6 +72,11 @@ Here's an example of using your own collection:
 	// use token to connect to API, or whatever
 	log.Println("token:", token)
     
+
+## Current Limitations
+
+- Only supporting string values at the moment
+- Flags used the built-in flagset, flag.CommandLine. 
 
 ## License
 

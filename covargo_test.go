@@ -11,6 +11,8 @@ func TestReadmeUsageDefaultExample(t *testing.T) {
 	)
 
 	item := Add(DROPBOOKSOFT_SECRET_APP_TOKEN)
+	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
+	item.SetCliValueFlags("dbs", "dbs_app_token", "secret token used to access dbs API")
 
 	// here we are using the same string for the item key as the env var.
 	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
@@ -33,7 +35,7 @@ func TestReadmeUsageCustomExample(t *testing.T) {
 	item := col.Add(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
 	item.SetEnvVar(DROPBOOKSOFT_SECRET_APP_TOKEN)
-	item.SetCliValueFlags("d", "dbs_token", "secret token used to access dbs API")
+	item.SetCliValueFlags("d", "dbs_secret_token", "secret token used to access dbs API")
 
 	col.Load(DROPBOOKSOFT_SECRET_APP_TOKEN)
 
